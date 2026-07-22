@@ -1,0 +1,8 @@
+# Visual Studio GitIgnore 
+bin/ 
+obj/ 
+.vs/ 
+packages/ 
+*.user 
+*.suo 
+*.cache 
