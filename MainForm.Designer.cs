@@ -57,7 +57,7 @@
             // 
             // btnEvents
             // 
-            this.btnEvents.Enabled = false;
+            this.btnEvents.Enabled = true;
             this.btnEvents.Location = new System.Drawing.Point(289, 192);
             this.btnEvents.Name = "btnEvents";
             this.btnEvents.Size = new System.Drawing.Size(200, 60);
@@ -68,7 +68,7 @@
             // 
             // btnServiceStatus
             // 
-            this.btnServiceStatus.Enabled = false;
+            this.btnServiceStatus.Enabled = true;
             this.btnServiceStatus.Location = new System.Drawing.Point(289, 294);
             this.btnServiceStatus.Name = "btnServiceStatus";
             this.btnServiceStatus.Size = new System.Drawing.Size(200, 40);

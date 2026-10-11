@@ -1,15 +1,12 @@
 ﻿using iTextSharp.text;
 using iTextSharp.text.pdf;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using Font = System.Drawing.Font;
 
 namespace MunicipalServicesApp
 {
@@ -23,31 +20,120 @@ namespace MunicipalServicesApp
         private void ViewIssuesForm_Load(object sender, EventArgs e)
         {
             ApplyUnifiedTheme(this);
+            ConfigureForm();
+            ConfigureIssuesGrid();
+            LoadFilterCategories();
+            RefreshGrid();
+        }
 
+        private void ConfigureForm()
+        {
+            this.Font = new Font("Segoe UI", 10);
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.MaximizeBox = false;
+            this.Text = "Municipal Services - Submitted Issues";
+        }
 
-            // Bind issues to grid
-            dgvIssues.DataSource = IssueRepository.Issues;
+        private void ConfigureIssuesGrid()
+        {
+            dgvIssues.ReadOnly = true;
+            dgvIssues.AllowUserToAddRows = false;
+            dgvIssues.AllowUserToDeleteRows = false;
+            dgvIssues.MultiSelect = false;
 
-            // Enable sorting on all columns
-            foreach (DataGridViewColumn column in dgvIssues.Columns)
-            {
-                column.SortMode = DataGridViewColumnSortMode.Automatic;
-            }
+            // Selecting any cell selects the complete issue record.
+            dgvIssues.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
 
-            // Load categories into filter dropdown
+            dgvIssues.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.Fill;
+
+            dgvIssues.BackgroundColor = Color.White;
+            dgvIssues.BorderStyle = BorderStyle.None;
+            dgvIssues.GridColor = Color.FromArgb(220, 225, 230);
+            dgvIssues.RowHeadersVisible = false;
+            dgvIssues.EnableHeadersVisualStyles = false;
+
+            dgvIssues.ColumnHeadersDefaultCellStyle.BackColor =
+                Color.FromArgb(0, 82, 155);
+
+            dgvIssues.ColumnHeadersDefaultCellStyle.ForeColor =
+                Color.White;
+
+            dgvIssues.ColumnHeadersDefaultCellStyle.Font =
+                new Font("Segoe UI", 10, FontStyle.Bold);
+
+            dgvIssues.ColumnHeadersHeight = 38;
+
+            dgvIssues.DefaultCellStyle.BackColor =
+                Color.White;
+
+            dgvIssues.DefaultCellStyle.ForeColor =
+                Color.FromArgb(33, 37, 41);
+
+            dgvIssues.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(207, 226, 243);
+
+            dgvIssues.DefaultCellStyle.SelectionForeColor =
+                Color.FromArgb(20, 46, 75);
+
+            dgvIssues.DefaultCellStyle.Font =
+                new Font("Segoe UI", 10);
+
+            dgvIssues.AlternatingRowsDefaultCellStyle.BackColor =
+                Color.FromArgb(247, 249, 252);
+        }
+
+        private void LoadFilterCategories()
+        {
             cmbFilterCategory.Items.Clear();
+
+            cmbFilterCategory.Items.Add("All Categories");
             cmbFilterCategory.Items.Add("Sanitation");
             cmbFilterCategory.Items.Add("Roads");
             cmbFilterCategory.Items.Add("Utilities");
             cmbFilterCategory.Items.Add("Electricity");
             cmbFilterCategory.Items.Add("Water");
-            cmbFilterCategory.Items.Insert(0, "All Categories");
 
             cmbFilterCategory.SelectedIndex = 0;
-
-       
         }
 
+        private void RefreshGrid()
+        {
+            dgvIssues.DataSource = null;
+            dgvIssues.DataSource = IssueRepository.Issues.ToList();
+
+            EnableColumnSorting();
+
+            if (dgvIssues.Rows.Count > 0)
+            {
+                dgvIssues.ClearSelection();
+
+                dgvIssues.Rows[0].Selected = true;
+                dgvIssues.CurrentCell =
+                    dgvIssues.Rows[0].Cells[0];
+            }
+        }
+
+        private void EnableColumnSorting()
+        {
+            foreach (DataGridViewColumn column in dgvIssues.Columns)
+            {
+                column.SortMode =
+                    DataGridViewColumnSortMode.Automatic;
+            }
+        }
+
+        private Issue GetSelectedIssue()
+        {
+            if (dgvIssues.CurrentRow == null)
+            {
+                return null;
+            }
+
+            return dgvIssues.CurrentRow.DataBoundItem as Issue;
+        }
 
         private void btnBack_Click(object sender, EventArgs e)
         {
@@ -56,289 +142,473 @@ namespace MunicipalServicesApp
 
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            string search = txtSearch.Text.ToLower().Trim();
-            string category = cmbFilterCategory.SelectedItem.ToString();
-
-            var filtered = IssueRepository.Issues
-                .Where(i =>
-                    (string.IsNullOrEmpty(search) ||
-                     i.Location.ToLower().Contains(search) ||
-                     i.Description.ToLower().Contains(search))
-                    &&
-                    (category == "All Categories" || i.Category == category)
-                )
-                .ToList();
-
-            dgvIssues.DataSource = filtered;
+            ApplyIssueFilter();
         }
-
-
-        private void dgvIssues_CellContentClick(object sender, DataGridViewCellEventArgs e)
-        {
-            if (e.RowIndex < 0) return;
-
-            Issue selectedIssue = dgvIssues.Rows[e.RowIndex].DataBoundItem as Issue;
-            if (selectedIssue == null) return;
-
-            string details =
-                "=== Issue Details ===\n" +
-                $"• Location:     {selectedIssue.Location}\n" +
-                $"• Category:     {selectedIssue.Category}\n" +
-                $"• Description:  {selectedIssue.Description}\n" +
-                $"• Reported:     {selectedIssue.CreatedAt:yyyy-MM-dd HH:mm}\n";
-
-            MessageBox.Show(details, "Issue Details", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-
 
         private void btnApplyFilter_Click(object sender, EventArgs e)
         {
-            string search = txtSearch.Text.ToLower().Trim();
-            string category = cmbFilterCategory.SelectedItem.ToString();
-
-            var filtered = IssueRepository.Issues
-                .Where(i =>
-                    // Search filter
-                    (string.IsNullOrEmpty(search) ||
-                     i.Location.ToLower().Contains(search) ||
-                     i.Description.ToLower().Contains(search))
-                    &&
-                    // Category filter
-                    (category == "All Categories" || i.Category == category)
-                )
-                .ToList();
-
-            dgvIssues.DataSource = filtered;
+            ApplyIssueFilter();
         }
 
+        private void ApplyIssueFilter()
+        {
+            string search =
+                txtSearch.Text.Trim();
+
+            string category =
+                cmbFilterCategory.SelectedItem?.ToString()
+                ?? "All Categories";
+
+            var filteredIssues = IssueRepository.Issues
+                .Where(issue =>
+                    (string.IsNullOrWhiteSpace(search) ||
+                     (!string.IsNullOrWhiteSpace(issue.Location) &&
+                      issue.Location.IndexOf(
+                          search,
+                          StringComparison.OrdinalIgnoreCase) >= 0) ||
+                     (!string.IsNullOrWhiteSpace(issue.Description) &&
+                      issue.Description.IndexOf(
+                          search,
+                          StringComparison.OrdinalIgnoreCase) >= 0))
+                    &&
+                    (category == "All Categories" ||
+                     string.Equals(
+                         issue.Category,
+                         category,
+                         StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            dgvIssues.DataSource = null;
+            dgvIssues.DataSource = filteredIssues;
+
+            EnableColumnSorting();
+
+            if (dgvIssues.Rows.Count > 0)
+            {
+                dgvIssues.ClearSelection();
+
+                dgvIssues.Rows[0].Selected = true;
+                dgvIssues.CurrentCell =
+                    dgvIssues.Rows[0].Cells[0];
+            }
+        }
 
         private void btnResetFilter_Click(object sender, EventArgs e)
         {
             txtSearch.Clear();
             cmbFilterCategory.SelectedIndex = 0;
-            dgvIssues.DataSource = IssueRepository.Issues;
+            RefreshGrid();
         }
 
-
-        private void RefreshGrid()
+        private void dgvIssues_CellContentClick(
+            object sender,
+            DataGridViewCellEventArgs e)
         {
-            dgvIssues.DataSource = null;
-            dgvIssues.DataSource = IssueRepository.Issues;
-        }
-
-
-        private void ApplyUnifiedTheme(Control parent)
-        {
-            // Form background
-            parent.BackColor = Color.WhiteSmoke;
-
-            foreach (Control ctrl in parent.Controls)
+            if (e.RowIndex < 0)
             {
-                // Style buttons
-                if (ctrl is Button btn)
-                {
-                    btn.BackColor = Color.SteelBlue;
-                    btn.ForeColor = Color.White;
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
-                }
-
-                // Style labels
-                if (ctrl is Label lbl)
-                {
-                    lbl.ForeColor = Color.Black;
-                }
-
-                // Engagement label (special styling)
-                if (ctrl.Name == "lblEngagement")
-                {
-                    ctrl.ForeColor = Color.DimGray;
-                    
-                }
-
-                // Picture preview border
-                if (ctrl is PictureBox pic)
-                {
-                    pic.BorderStyle = BorderStyle.FixedSingle;
-                }
-
-                // Recursively style nested controls (panels, group boxes)
-                if (ctrl.HasChildren)
-                {
-                    ApplyUnifiedTheme(ctrl);
-                }
-            }
-        }
-
-
-        private void btnExportCsv_Click(object sender, EventArgs e)
-        {
-            if (IssueRepository.Issues.Count == 0)
-            {
-                MessageBox.Show("No issues available to export.", "Export",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            using (SaveFileDialog sfd = new SaveFileDialog())
+            dgvIssues.ClearSelection();
+            dgvIssues.Rows[e.RowIndex].Selected = true;
+            dgvIssues.CurrentCell =
+                dgvIssues.Rows[e.RowIndex].Cells[e.ColumnIndex];
+
+            Issue selectedIssue =
+                dgvIssues.Rows[e.RowIndex].DataBoundItem as Issue;
+
+            if (selectedIssue == null)
             {
-                sfd.Filter = "CSV Files (*.csv)|*.csv";
-                sfd.FileName = "MunicipalIssues.csv";
-
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    StringBuilder sb = new StringBuilder();
-
-                    sb.AppendLine("Location,Category,Description,MediaPath,CreatedAt");
-
-                    foreach (var issue in IssueRepository.Issues)
-                    {
-                        sb.AppendLine(
-                            $"{Escape(issue.Location)}," +
-                            $"{Escape(issue.Category)}," +
-                            $"{Escape(issue.Description)}," +
-                            $"{Escape(issue.MediaPath)}," +
-                            $"{issue.CreatedAt:yyyy-MM-dd HH:mm}"
-                        );
-                    }
-
-                    File.WriteAllText(sfd.FileName, sb.ToString());
-
-                    MessageBox.Show("Issues exported successfully.", "Export",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
+                return;
             }
+
+            string details =
+                "Issue Details\n\n" +
+                $"Location: {selectedIssue.Location}\n" +
+                $"Category: {selectedIssue.Category}\n" +
+                $"Description: {selectedIssue.Description}\n" +
+                $"Reported: {selectedIssue.CreatedAt:yyyy-MM-dd HH:mm}";
+
+            MessageBox.Show(
+                details,
+                "Issue Details",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
 
-        private string Escape(string value)
+        private void btnEditIssue_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(value))
-                return "";
+            Issue selectedIssue = GetSelectedIssue();
 
-            return "\"" + value.Replace("\"", "\"\"") + "\"";
+            if (selectedIssue == null)
+            {
+                MessageBox.Show(
+                    "Please select an issue to edit.",
+                    "Edit Issue",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                return;
+            }
+
+            using (EditIssueForm editForm =
+                   new EditIssueForm(selectedIssue))
+            {
+                if (editForm.ShowDialog() == DialogResult.OK)
+                {
+                    RefreshGrid();
+
+                    MessageBox.Show(
+                        "Issue updated successfully.",
+                        "Edit Issue",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+            }
         }
 
         private void btnDeleteIssue_Click(object sender, EventArgs e)
         {
-            if (dgvIssues.SelectedRows.Count == 0)
+            Issue selectedIssue = GetSelectedIssue();
+
+            if (selectedIssue == null)
             {
-                MessageBox.Show("Please select an issue to delete.", "Delete Issue",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "Please select an issue to delete.",
+                    "Delete Issue",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
                 return;
             }
 
-            Issue selectedIssue = dgvIssues.SelectedRows[0].DataBoundItem as Issue;
-
-            if (selectedIssue == null)
-                return;
-
-            DialogResult confirm = MessageBox.Show(
+            DialogResult confirmation = MessageBox.Show(
                 "Are you sure you want to delete this issue?",
                 "Confirm Delete",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
 
-            if (confirm == DialogResult.Yes)
+            if (confirmation != DialogResult.Yes)
             {
-                IssueRepository.Issues.Remove(selectedIssue);
-                RefreshGrid();
+                return;
+            }
 
-                MessageBox.Show("Issue deleted successfully.", "Delete Issue",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            IssueRepository.Issues.Remove(selectedIssue);
+            RefreshGrid();
+
+            MessageBox.Show(
+                "Issue deleted successfully.",
+                "Delete Issue",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+
+        private void btnExportCsv_Click(object sender, EventArgs e)
+        {
+            if (IssueRepository.Issues.Count == 0)
+            {
+                MessageBox.Show(
+                    "No issues are available to export.",
+                    "Export CSV",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                return;
+            }
+
+            using (SaveFileDialog saveDialog =
+                   new SaveFileDialog())
+            {
+                saveDialog.Filter =
+                    "CSV Files (*.csv)|*.csv";
+
+                saveDialog.FileName =
+                    "MunicipalIssues.csv";
+
+                if (saveDialog.ShowDialog() !=
+                    DialogResult.OK)
+                {
+                    return;
+                }
+
+                StringBuilder csvContent =
+                    new StringBuilder();
+
+                csvContent.AppendLine(
+                    "Location,Category,Description,MediaPath,CreatedAt");
+
+                foreach (Issue issue in IssueRepository.Issues)
+                {
+                    csvContent.AppendLine(
+                        $"{EscapeCsv(issue.Location)}," +
+                        $"{EscapeCsv(issue.Category)}," +
+                        $"{EscapeCsv(issue.Description)}," +
+                        $"{EscapeCsv(issue.MediaPath)}," +
+                        $"{issue.CreatedAt:yyyy-MM-dd HH:mm}");
+                }
+
+                File.WriteAllText(
+                    saveDialog.FileName,
+                    csvContent.ToString());
+
+                MessageBox.Show(
+                    "Issues exported successfully.",
+                    "Export CSV",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
         }
 
-        private void btnEditIssue_Click(object sender, EventArgs e)
+        private string EscapeCsv(string value)
         {
-            if (dgvIssues.SelectedRows.Count == 0)
+            if (string.IsNullOrEmpty(value))
             {
-                MessageBox.Show("Please select an issue to edit.", "Edit Issue",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
+                return "\"\"";
             }
 
-            Issue selectedIssue = dgvIssues.SelectedRows[0].DataBoundItem as Issue;
-
-            if (selectedIssue == null)
-                return;
-
-            // Open a simple edit dialog
-            using (EditIssueForm editForm = new EditIssueForm(selectedIssue))
-            {
-                if (editForm.ShowDialog() == DialogResult.OK)
-                {
-                    RefreshGrid();
-                    MessageBox.Show("Issue updated successfully.", "Edit Issue",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
-                }
-            }
+            return "\"" +
+                   value.Replace("\"", "\"\"") +
+                   "\"";
         }
 
         private void btnExportPdf_Click(object sender, EventArgs e)
         {
             if (IssueRepository.Issues.Count == 0)
             {
-                MessageBox.Show("No issues available to export.", "Export PDF",
-                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(
+                    "No issues are available to export.",
+                    "Export PDF",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
                 return;
             }
 
-            using (SaveFileDialog sfd = new SaveFileDialog())
+            using (SaveFileDialog saveDialog =
+                   new SaveFileDialog())
             {
-                sfd.Filter = "PDF Files (*.pdf)|*.pdf";
-                sfd.FileName = "MunicipalIssues.pdf";
+                saveDialog.Filter =
+                    "PDF Files (*.pdf)|*.pdf";
 
-                if (sfd.ShowDialog() == DialogResult.OK)
+                saveDialog.FileName =
+                    "MunicipalIssues.pdf";
+
+                if (saveDialog.ShowDialog() !=
+                    DialogResult.OK)
                 {
-                    Document doc = new Document(PageSize.A4, 40, 40, 40, 40);
-                    PdfWriter.GetInstance(doc, new FileStream(sfd.FileName, FileMode.Create));
-
-                    doc.Open();
-
-                    // Header font
-                    iTextSharp.text.Font headerFont = new iTextSharp.text.Font(
-                        iTextSharp.text.Font.FontFamily.HELVETICA,
-                        18,
-                        iTextSharp.text.Font.BOLD
-                    );
-
-                    // Body font
-                    iTextSharp.text.Font bodyFont = new iTextSharp.text.Font(
-                        iTextSharp.text.Font.FontFamily.HELVETICA,
-                        12,
-                        iTextSharp.text.Font.NORMAL
-                    );
-
-                    // Title
-                    doc.Add(new Paragraph("Municipal Issues Report", headerFont));
-                    doc.Add(new Paragraph("Generated: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"), bodyFont));
-                    doc.Add(new Paragraph("\n"));
-
-                    // Loop through issues
-                    foreach (var issue in IssueRepository.Issues)
-                    {
-                        Paragraph p = new Paragraph(
-                            $"Location: {issue.Location}\n" +
-                            $"Category: {issue.Category}\n" +
-                            $"Description: {issue.Description}\n" +
-                            $"Media: {issue.MediaPath}\n" +
-                            $"Created: {issue.CreatedAt:yyyy-MM-dd HH:mm}\n",
-                            bodyFont
-                        );
-
-                        doc.Add(p);
-                        doc.Add(new Paragraph("--------------------------------------------\n"));
-                    }
-
-                    doc.Close();
-
-                    MessageBox.Show("PDF exported successfully.", "Export PDF",
-                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
                 }
+
+                Document document =
+                    new Document(
+                        PageSize.A4,
+                        40,
+                        40,
+                        40,
+                        40);
+
+                try
+                {
+                    PdfWriter.GetInstance(
+                        document,
+                        new FileStream(
+                            saveDialog.FileName,
+                            FileMode.Create));
+
+                    document.Open();
+
+                    iTextSharp.text.Font headerFont =
+                        new iTextSharp.text.Font(
+                            iTextSharp.text.Font.FontFamily.HELVETICA,
+                            18,
+                            iTextSharp.text.Font.BOLD);
+
+                    iTextSharp.text.Font bodyFont =
+                        new iTextSharp.text.Font(
+                            iTextSharp.text.Font.FontFamily.HELVETICA,
+                            12,
+                            iTextSharp.text.Font.NORMAL);
+
+                    document.Add(
+                        new Paragraph(
+                            "Municipal Issues Report",
+                            headerFont));
+
+                    document.Add(
+                        new Paragraph(
+                            "Generated: " +
+                            DateTime.Now.ToString(
+                                "yyyy-MM-dd HH:mm"),
+                            bodyFont));
+
+                    document.Add(new Paragraph("\n"));
+
+                    foreach (Issue issue
+                             in IssueRepository.Issues)
+                    {
+                        Paragraph issueParagraph =
+                            new Paragraph(
+                                $"Location: {issue.Location}\n" +
+                                $"Category: {issue.Category}\n" +
+                                $"Description: {issue.Description}\n" +
+                                $"Media: {issue.MediaPath}\n" +
+                                $"Created: " +
+                                $"{issue.CreatedAt:yyyy-MM-dd HH:mm}\n",
+                                bodyFont);
+
+                        document.Add(issueParagraph);
+
+                        document.Add(
+                            new Paragraph(
+                                "----------------------------------------\n"));
+                    }
+                }
+                finally
+                {
+                    if (document.IsOpen())
+                    {
+                        document.Close();
+                    }
+                }
+
+                MessageBox.Show(
+                    "PDF exported successfully.",
+                    "Export PDF",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
             }
         }
 
+        private void ApplyUnifiedTheme(Control parent)
+        {
+            parent.BackColor =
+                Color.FromArgb(240, 244, 248);
 
+            foreach (Control ctrl in parent.Controls)
+            {
+                if (ctrl is Button btn)
+                {
+                    btn.BackColor =
+                        Color.FromArgb(0, 122, 204);
+
+                    btn.ForeColor = Color.White;
+                    btn.FlatStyle = FlatStyle.Flat;
+                    btn.FlatAppearance.BorderSize = 0;
+
+                    btn.Font = new Font(
+                        "Segoe UI",
+                        10,
+                        FontStyle.Bold);
+
+                    btn.Cursor = Cursors.Hand;
+                    btn.Height = Math.Max(btn.Height, 36);
+                }
+
+                if (ctrl is Label lbl)
+                {
+                    lbl.ForeColor =
+                        Color.FromArgb(33, 37, 41);
+
+                    lbl.Font = new Font(
+                        "Segoe UI",
+                        10,
+                        FontStyle.Regular);
+
+                    if (lbl.Name.Contains("Heading"))
+                    {
+                        lbl.ForeColor =
+                            Color.FromArgb(0, 82, 155);
+
+                        lbl.Font = new Font(
+                            "Segoe UI",
+                            18,
+                            FontStyle.Bold);
+                    }
+                }
+
+                if (ctrl is TextBox txt)
+                {
+                    txt.BackColor = Color.White;
+
+                    txt.ForeColor =
+                        Color.FromArgb(33, 37, 41);
+
+                    txt.BorderStyle =
+                        BorderStyle.FixedSingle;
+
+                    txt.Font =
+                        new Font("Segoe UI", 10);
+                }
+
+                if (ctrl is ComboBox cmb)
+                {
+                    cmb.BackColor = Color.White;
+
+                    cmb.ForeColor =
+                        Color.FromArgb(33, 37, 41);
+
+                    cmb.Font =
+                        new Font("Segoe UI", 10);
+
+                    cmb.DropDownStyle =
+                        ComboBoxStyle.DropDownList;
+                }
+
+                if (ctrl is DataGridView dgv)
+                {
+                    dgv.BackgroundColor = Color.White;
+                    dgv.BorderStyle = BorderStyle.None;
+
+                    dgv.GridColor =
+                        Color.FromArgb(220, 225, 230);
+
+                    dgv.EnableHeadersVisualStyles = false;
+
+                    dgv.ColumnHeadersDefaultCellStyle.BackColor =
+                        Color.FromArgb(0, 82, 155);
+
+                    dgv.ColumnHeadersDefaultCellStyle.ForeColor =
+                        Color.White;
+
+                    dgv.ColumnHeadersDefaultCellStyle.Font =
+                        new Font(
+                            "Segoe UI",
+                            10,
+                            FontStyle.Bold);
+
+                    dgv.ColumnHeadersHeight = 38;
+
+                    dgv.DefaultCellStyle.BackColor =
+                        Color.White;
+
+                    dgv.DefaultCellStyle.ForeColor =
+                        Color.FromArgb(33, 37, 41);
+
+                    dgv.DefaultCellStyle.SelectionBackColor =
+                        Color.FromArgb(207, 226, 243);
+
+                    dgv.DefaultCellStyle.SelectionForeColor =
+                        Color.FromArgb(20, 46, 75);
+
+                    dgv.DefaultCellStyle.Font =
+                        new Font("Segoe UI", 10);
+
+                    dgv.AlternatingRowsDefaultCellStyle.BackColor =
+                        Color.FromArgb(247, 249, 252);
+
+                    dgv.RowHeadersVisible = false;
+
+                    dgv.SelectionMode =
+                        DataGridViewSelectionMode.FullRowSelect;
+
+                    dgv.MultiSelect = false;
+                }
+
+                if (ctrl.HasChildren)
+                {
+                    ApplyUnifiedTheme(ctrl);
+                }
+            }
+        }
     }
 }

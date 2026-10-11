@@ -22,6 +22,8 @@ namespace MunicipalServicesApp
         {
             ApplyUnifiedTheme(this);
 
+            this.Font = new Font("Segoe UI", 10);
+
             cmbCategory.Items.Add("Sanitation");
             cmbCategory.Items.Add("Roads");
             cmbCategory.Items.Add("Utilities");
@@ -185,42 +187,94 @@ namespace MunicipalServicesApp
 
         private void ApplyUnifiedTheme(Control parent)
         {
-            // Form background
-            parent.BackColor = Color.WhiteSmoke;
+            // Modern municipal background
+            parent.BackColor = Color.FromArgb(240, 244, 248);
 
             foreach (Control ctrl in parent.Controls)
             {
-                // Style buttons
+                // Buttons
                 if (ctrl is Button btn)
                 {
-                    btn.BackColor = Color.SteelBlue;
+                    btn.BackColor = Color.FromArgb(0, 122, 204);
                     btn.ForeColor = Color.White;
+
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
+
+                    btn.Font = new Font(
+                        "Segoe UI",
+                        10,
+                        FontStyle.Bold);
+
+                    btn.Cursor = Cursors.Hand;
                 }
 
-
-
-                // Style labels
+                // Labels
                 if (ctrl is Label lbl)
                 {
-                    lbl.ForeColor = Color.Black;
+                    lbl.ForeColor = Color.FromArgb(33, 37, 41);
+
+                    if (lbl.Name.Contains("Heading"))
+                    {
+                        lbl.ForeColor = Color.FromArgb(0, 82, 155);
+
+                        lbl.Font = new Font(
+                            "Segoe UI",
+                            18,
+                            FontStyle.Bold);
+                    }
                 }
 
-                // Engagement label (special styling)
-                if (ctrl.Name == "lblEngagement")
+                // TextBoxes
+                if (ctrl is TextBox txt)
                 {
-                    ctrl.ForeColor = Color.DimGray;
-                    ctrl.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                    txt.BackColor = Color.White;
+                    txt.BorderStyle = BorderStyle.FixedSingle;
+
+                    txt.Font = new Font(
+                        "Segoe UI",
+                        10);
                 }
 
-                // Picture preview border
+                // RichTextBoxes
+                if (ctrl is RichTextBox rtb)
+                {
+                    rtb.BackColor = Color.White;
+
+                    rtb.Font = new Font(
+                        "Segoe UI",
+                        10);
+                }
+
+                // ComboBoxes
+                if (ctrl is ComboBox cmb)
+                {
+                    cmb.BackColor = Color.White;
+
+                    cmb.Font = new Font(
+                        "Segoe UI",
+                        10);
+                }
+
+                // PictureBoxes
                 if (ctrl is PictureBox pic)
                 {
                     pic.BorderStyle = BorderStyle.FixedSingle;
+                    pic.BackColor = Color.White;
                 }
 
-                // Recursively style nested controls (panels, group boxes)
+                // Special engagement label
+                if (ctrl.Name == "lblEngagement")
+                {
+                    ctrl.ForeColor = Color.FromArgb(108, 117, 125);
+
+                    ctrl.Font = new Font(
+                        "Segoe UI",
+                        10,
+                        FontStyle.Italic);
+                }
+
+                // Recursive theme application
                 if (ctrl.HasChildren)
                 {
                     ApplyUnifiedTheme(ctrl);

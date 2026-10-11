@@ -19,14 +19,17 @@ namespace MunicipalServicesApp
 
         private void btnReportIssues_Click(object sender, EventArgs e)
         {
-            btnReportIssues.BackColor = Color.LightGray;
-
             this.Hide();
+
             using (ReportIssuesForm form = new ReportIssuesForm())
             {
                 form.ShowDialog();
             }
+
             this.Show();
+
+            // Reapply the theme when returning to the Main Menu.
+            ApplyUnifiedTheme(this);
         }
 
 
@@ -39,6 +42,8 @@ namespace MunicipalServicesApp
             }
             this.Show();
         }
+
+
 
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
@@ -62,63 +67,156 @@ namespace MunicipalServicesApp
             btnServiceStatus.Enabled = false;
         }
 
+
         private void btnEvents_Click(object sender, EventArgs e)
         {
-            btnEvents.Enabled = false;
+            this.Hide();
+
+            using (LocalEventsForm form = new LocalEventsForm())
+            {
+                form.ShowDialog();
+            }
+
+            this.Show();
         }
+
+
+
 
         private void MainForm_Load(object sender, EventArgs e)
         {
             ApplyUnifiedTheme(this);
 
+            this.Font = new Font("Segoe UI", 10);
+
+            this.FormBorderStyle = FormBorderStyle.FixedSingle;
+
+            this.MaximizeBox = false;
         }
 
         private void ApplyUnifiedTheme(Control parent)
         {
-            // Form background
-            parent.BackColor = Color.WhiteSmoke;
+            // Main background colour
+            parent.BackColor = Color.FromArgb(240, 244, 248);
 
             foreach (Control ctrl in parent.Controls)
             {
-                // Style buttons
+                // Buttons
                 if (ctrl is Button btn)
                 {
-                    btn.BackColor = Color.SteelBlue;
+                    btn.BackColor = Color.FromArgb(0, 122, 204);
                     btn.ForeColor = Color.White;
                     btn.FlatStyle = FlatStyle.Flat;
                     btn.FlatAppearance.BorderSize = 0;
+
+                    btn.Font = new Font(
+                        "Segoe UI",
+                        10,
+                        FontStyle.Bold);
+
+                    btn.Cursor = Cursors.Hand;
                 }
 
-                // Style labels
+                // Labels
                 if (ctrl is Label lbl)
                 {
-                    lbl.ForeColor = Color.Black;
+                    lbl.ForeColor = Color.FromArgb(33, 37, 41);
+
+                    // Main heading styling
+                    if (lbl.Name.Contains("Heading"))
+                    {
+                        lbl.ForeColor = Color.FromArgb(0, 82, 155);
+
+                        lbl.Font = new Font(
+                            "Segoe UI",
+                            18,
+                            FontStyle.Bold);
+                    }
                 }
 
-                // Engagement label (special styling)
-                if (ctrl.Name == "lblEngagement")
+                // TextBoxes
+                if (ctrl is TextBox txt)
                 {
-                    ctrl.ForeColor = Color.DimGray;
-                    ctrl.Font = new Font("Segoe UI", 10, FontStyle.Italic);
+                    txt.BorderStyle = BorderStyle.FixedSingle;
+
+                    txt.Font = new Font(
+                        "Segoe UI",
+                        10);
+
+                    txt.BackColor = Color.White;
                 }
 
-                // Picture preview border
+                // ComboBoxes
+                if (ctrl is ComboBox cmb)
+                {
+                    cmb.Font = new Font(
+                        "Segoe UI",
+                        10);
+
+                    cmb.BackColor = Color.White;
+                }
+
+                // ListBoxes
+                if (ctrl is ListBox lst)
+                {
+                    lst.Font = new Font(
+                        "Segoe UI",
+                        10);
+
+                    lst.BackColor = Color.White;
+                }
+
+                // DateTimePickers
+                if (ctrl is DateTimePicker dtp)
+                {
+                    dtp.Font = new Font(
+                        "Segoe UI",
+                        10);
+                }
+
+                // DataGridView
+                if (ctrl is DataGridView dgv)
+                {
+                    dgv.BackgroundColor = Color.White;
+
+                    dgv.BorderStyle = BorderStyle.None;
+
+                    dgv.GridColor = Color.LightGray;
+
+                    dgv.EnableHeadersVisualStyles = false;
+
+                    dgv.ColumnHeadersDefaultCellStyle.BackColor =
+                        Color.FromArgb(0, 122, 204);
+
+                    dgv.ColumnHeadersDefaultCellStyle.ForeColor =
+                        Color.White;
+
+                    dgv.ColumnHeadersDefaultCellStyle.Font =
+                        new Font(
+                            "Segoe UI",
+                            10,
+                            FontStyle.Bold);
+
+                    dgv.DefaultCellStyle.Font =
+                        new Font(
+                            "Segoe UI",
+                            10);
+
+                    dgv.RowHeadersVisible = false;
+                }
+
+                // PictureBoxes
                 if (ctrl is PictureBox pic)
                 {
                     pic.BorderStyle = BorderStyle.FixedSingle;
                 }
 
-                // Recursively style nested controls (panels, group boxes)
+                // Recursively apply styling
                 if (ctrl.HasChildren)
                 {
                     ApplyUnifiedTheme(ctrl);
                 }
             }
         }
-
-
-
-
-
     }
 }

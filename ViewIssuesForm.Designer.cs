@@ -47,7 +47,7 @@
             this.dgvIssues.AllowUserToDeleteRows = false;
             this.dgvIssues.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.Fill;
             this.dgvIssues.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dgvIssues.Location = new System.Drawing.Point(50, 60);
+            this.dgvIssues.Location = new System.Drawing.Point(50, 64);
             this.dgvIssues.Name = "dgvIssues";
             this.dgvIssues.ReadOnly = true;
             this.dgvIssues.RowHeadersWidth = 51;

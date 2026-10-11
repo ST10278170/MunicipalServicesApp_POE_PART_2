@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
+
 
 namespace MunicipalServicesApp
 {
@@ -15,66 +16,83 @@ namespace MunicipalServicesApp
         public SplashScreenForm()
         {
             InitializeComponent();
-            this.Load += new System.EventHandler(this.SplashScreenForm_Load);
 
+            // Ensure each event is connected only once.
+            this.Load -= SplashScreenForm_Load;
+            this.Load += SplashScreenForm_Load;
+
+            timer1.Tick -= timer1_Tick;
+            timer1.Tick += timer1_Tick;
         }
 
-        private void SplashScreenForm_Load(object sender, EventArgs e)
+        private void SplashScreenForm_Load(
+            object sender,
+            EventArgs e)
         {
-            timer1.Interval = 3500; // 3.5 seconds
-            timer1.Start();
-            ApplyUnifiedTheme(this);
+            ConfigureSplashScreen();
+            ApplySplashTheme();
+            CentreSplashContent();
 
+            // Display the splash screen for 3.5 seconds.
+            timer1.Interval = 3500;
+            timer1.Start();
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void ConfigureSplashScreen()
+        {
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.ControlBox = false;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.ShowInTaskbar = false;
+            this.BackColor = Color.FromArgb(240, 244, 248);
+        }
+
+        private void ApplySplashTheme()
+        {
+            // Main application title.
+            lblTitle.ForeColor = Color.FromArgb(0, 82, 155);
+            lblTitle.Font = new Font(
+                "Segoe UI",
+                22,
+                FontStyle.Bold);
+
+            lblTitle.AutoSize = true;
+            lblTitle.Text = "Municipal Services Application";
+
+            // Loading message.
+            lblLoading.ForeColor = Color.FromArgb(108, 117, 125);
+            lblLoading.Font = new Font(
+                "Segoe UI",
+                11,
+                FontStyle.Italic);
+
+            lblLoading.AutoSize = true;
+            lblLoading.Text = "Preparing municipal services...";
+        }
+
+        private void CentreSplashContent()
+        {
+            lblTitle.Left =
+                (this.ClientSize.Width - lblTitle.Width) / 2;
+
+            lblTitle.Top =
+                (this.ClientSize.Height - lblTitle.Height) / 2 - 35;
+
+            lblLoading.Left =
+                (this.ClientSize.Width - lblLoading.Width) / 2;
+
+            lblLoading.Top =
+                lblTitle.Bottom + 25;
+        }
+
+        private void timer1_Tick(
+            object sender,
+            EventArgs e)
         {
             timer1.Stop();
-            this.Close(); // Splash screen closes automatically
+            this.Close();
         }
-
-        private void ApplyUnifiedTheme(Control parent)
-        {
-            // Form background
-            parent.BackColor = Color.WhiteSmoke;
-
-            foreach (Control ctrl in parent.Controls)
-            {
-                // Style buttons
-                if (ctrl is Button btn)
-                {
-                    btn.BackColor = Color.SteelBlue;
-                    btn.ForeColor = Color.White;
-                    btn.FlatStyle = FlatStyle.Flat;
-                    btn.FlatAppearance.BorderSize = 0;
-                }
-
-                // Style labels
-                if (ctrl is Label lbl)
-                {
-                    lbl.ForeColor = Color.Black;
-                }
-
-                // Engagement label (special styling)
-                if (ctrl.Name == "lblEngagement")
-                {
-                    ctrl.ForeColor = Color.DimGray;
-                    ctrl.Font = new Font("Segoe UI", 10, FontStyle.Italic);
-                }
-
-                // Picture preview border
-                if (ctrl is PictureBox pic)
-                {
-                    pic.BorderStyle = BorderStyle.FixedSingle;
-                }
-
-                // Recursively style nested controls (panels, group boxes)
-                if (ctrl.HasChildren)
-                {
-                    ApplyUnifiedTheme(ctrl);
-                }
-            }
-        }
-
     }
 }
